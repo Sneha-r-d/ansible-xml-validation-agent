@@ -40,13 +40,25 @@ options:
     type: bool
     default: false
   ai_api_url:
-    description: AI API endpoint URL.
+    description: AI API base URL or full chat completions endpoint URL.
     type: str
     required: false
+  ai_api_path:
+    description: API path appended to ai_api_url when ai_api_url is a base URL.
+    type: str
+    default: /openai/v1/chat/completions
   ai_api_key_env_var:
     description: Environment variable name containing the AI API key.
     type: str
     default: XML_AI_API_KEY
+  ai_auth_header:
+    description: HTTP header used to send the AI API key.
+    type: str
+    default: Authorization
+  ai_auth_scheme:
+    description: Optional authentication scheme prepended to the API key. Use an empty value or none for raw key headers.
+    type: str
+    default: Bearer
   ai_model:
     description: Model name to send to an OpenAI-compatible chat completions API.
     type: str
@@ -96,6 +108,7 @@ import datetime
 import json
 import os
 import traceback
+from urllib.parse import urljoin
 
 from ansible.module_utils.basic import AnsibleModule
 
@@ -329,11 +342,12 @@ def validate_required_tags(xml_tree, required_tags, validation_errors):
                 )
 
 
-def build_ai_endpoint(ai_api_url):
+def build_ai_endpoint(ai_api_url, ai_api_path):
     cleaned_url = ai_api_url.rstrip("/")
     if cleaned_url.endswith("/chat/completions") or cleaned_url.endswith("/responses"):
         return cleaned_url
-    return "{0}/openai/v1/chat/completions".format(cleaned_url)
+    cleaned_path = ai_api_path or "/openai/v1/chat/completions"
+    return urljoin("{0}/".format(cleaned_url), cleaned_path.lstrip("/"))
 
 
 def build_ai_prompt(xml_content, validation_errors):
@@ -368,15 +382,40 @@ def extract_ai_suggestions(response):
     return payload
 
 
-def call_ai_api(ai_api_url, api_key, ai_model, xml_content, validation_errors):
+def sanitize_response_text(text, api_key):
+    sanitized = text.replace(api_key, "[redacted]") if api_key else text
+    sanitized = " ".join(sanitized.split())
+    return sanitized[:800]
+
+
+def build_auth_headers(api_key, ai_auth_header, ai_auth_scheme):
+    header_name = ai_auth_header or "Authorization"
+    scheme = (ai_auth_scheme or "").strip()
+    if scheme.lower() in ("none", "null"):
+        scheme = ""
+
+    auth_value = "{0} {1}".format(scheme, api_key).strip() if scheme else api_key
+    return {
+        header_name: auth_value,
+        "Content-Type": "application/json",
+    }
+
+
+def call_ai_api(
+    ai_api_url,
+    ai_api_path,
+    api_key,
+    ai_auth_header,
+    ai_auth_scheme,
+    ai_model,
+    xml_content,
+    validation_errors,
+):
     if requests is None:
         raise RuntimeError("Python package requests is required for AI suggestions but is not installed.")
 
-    endpoint = build_ai_endpoint(ai_api_url)
-    headers = {
-        "Authorization": "Bearer {0}".format(api_key),
-        "Content-Type": "application/json",
-    }
+    endpoint = build_ai_endpoint(ai_api_url, ai_api_path)
+    headers = build_auth_headers(api_key, ai_auth_header, ai_auth_scheme)
     payload = {
         "model": ai_model,
         "messages": [
@@ -392,14 +431,29 @@ def call_ai_api(ai_api_url, api_key, ai_model, xml_content, validation_errors):
         "temperature": 0.1,
     }
     response = requests.post(endpoint, headers=headers, json=payload, timeout=30)
-    response.raise_for_status()
+    if response.status_code >= 400:
+        response_detail = sanitize_response_text(response.text, api_key)
+        if response_detail:
+            raise RuntimeError(
+                "AI API returned HTTP {0} {1}: {2}".format(
+                    response.status_code,
+                    response.reason,
+                    response_detail,
+                )
+            )
+        raise RuntimeError(
+            "AI API returned HTTP {0} {1}.".format(response.status_code, response.reason)
+        )
     return extract_ai_suggestions(response)
 
 
 def maybe_get_ai_suggestions(
     ai_enabled,
     ai_api_url,
+    ai_api_path,
     ai_api_key_env_var,
+    ai_auth_header,
+    ai_auth_scheme,
     ai_model,
     xml_content,
     validation_errors,
@@ -429,7 +483,16 @@ def maybe_get_ai_suggestions(
         return None
 
     try:
-        return call_ai_api(ai_api_url, api_key, ai_model, xml_content, validation_errors)
+        return call_ai_api(
+            ai_api_url,
+            ai_api_path,
+            api_key,
+            ai_auth_header,
+            ai_auth_scheme,
+            ai_model,
+            xml_content,
+            validation_errors,
+        )
     except Exception as exc:
         validation_warnings.append(
             make_issue(
@@ -468,7 +531,10 @@ def run_module():
         "report_md_path": {"type": "str", "required": True},
         "ai_enabled": {"type": "bool", "default": False},
         "ai_api_url": {"type": "str", "required": False, "default": ""},
+        "ai_api_path": {"type": "str", "required": False, "default": "/openai/v1/chat/completions"},
         "ai_api_key_env_var": {"type": "str", "required": False, "default": "XML_AI_API_KEY"},
+        "ai_auth_header": {"type": "str", "required": False, "default": "Authorization"},
+        "ai_auth_scheme": {"type": "str", "required": False, "default": "Bearer"},
         "ai_model": {"type": "str", "required": False, "default": "azure.gpt-4o-mini"},
     }
 
@@ -511,7 +577,10 @@ def run_module():
     ai_suggestions = maybe_get_ai_suggestions(
         params["ai_enabled"],
         params["ai_api_url"],
+        params["ai_api_path"],
         params["ai_api_key_env_var"],
+        params["ai_auth_header"],
+        params["ai_auth_scheme"],
         params["ai_model"],
         xml_content,
         validation_errors,

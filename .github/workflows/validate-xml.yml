@@ -26,6 +26,9 @@ jobs:
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_API_URL: ${{ vars.LLM_API_URL }}
+          LLM_API_PATH: ${{ vars.LLM_API_PATH }}
+          LLM_AUTH_HEADER: ${{ vars.LLM_AUTH_HEADER }}
+          LLM_AUTH_SCHEME: ${{ vars.LLM_AUTH_SCHEME }}
           LLM_MODEL: ${{ vars.LLM_MODEL }}
         shell: bash
         run: |
@@ -33,11 +36,17 @@ jobs:
           if [[ -n "${LLM_API_KEY}" && -n "${LLM_API_URL}" ]]; then
             ai_enabled=true
           fi
+          llm_api_path="${LLM_API_PATH:-/openai/v1/chat/completions}"
+          llm_auth_header="${LLM_AUTH_HEADER:-Authorization}"
+          llm_auth_scheme="${LLM_AUTH_SCHEME:-Bearer}"
 
           ansible-playbook -i inventory/localhost.ini playbook/site.yml \
             -e "ai_enabled=${ai_enabled}" \
             -e "ai_api_url=${LLM_API_URL}" \
+            -e "ai_api_path=${llm_api_path}" \
             -e "ai_api_key_env_var=LLM_API_KEY" \
+            -e "ai_auth_header=${llm_auth_header}" \
+            -e "ai_auth_scheme=${llm_auth_scheme}" \
             -e "ai_model=${LLM_MODEL:-azure.gpt-4o-mini}"
 
       - name: Publish validation report summary

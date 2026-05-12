@@ -50,7 +50,10 @@ To enable them, set role variables such as:
 ```yaml
 ai_enabled: true
 ai_api_url: "https://your-llm-gateway.example.com"
+ai_api_path: /openai/v1/chat/completions
 ai_api_key_env_var: LLM_API_KEY
+ai_auth_header: Authorization
+ai_auth_scheme: Bearer
 ai_model: azure.gpt-4o-mini
 ```
 
@@ -64,7 +67,10 @@ export LLM_MODEL="azure.gpt-4o-mini"
 ansible-playbook -i inventory/localhost.ini playbook/site.yml \
   -e ai_enabled=true \
   -e "ai_api_url=${LLM_API_URL}" \
+  -e ai_api_path=/openai/v1/chat/completions \
   -e ai_api_key_env_var=LLM_API_KEY \
+  -e ai_auth_header=Authorization \
+  -e ai_auth_scheme=Bearer \
   -e "ai_model=${LLM_MODEL}"
 ```
 
@@ -78,7 +84,10 @@ $env:LLM_MODEL = "azure.gpt-4o-mini"
 ansible-playbook -i inventory/localhost.ini playbook/site.yml `
   -e ai_enabled=true `
   -e "ai_api_url=$env:LLM_API_URL" `
+  -e ai_api_path=/openai/v1/chat/completions `
   -e ai_api_key_env_var=LLM_API_KEY `
+  -e ai_auth_header=Authorization `
+  -e ai_auth_scheme=Bearer `
   -e "ai_model=$env:LLM_MODEL"
 ```
 
@@ -90,9 +99,12 @@ In GitHub:
 2. Go to **Secrets and variables** > **Actions**.
 3. Create a repository secret named `LLM_API_KEY`.
 4. Create repository variables named `LLM_API_URL` and `LLM_MODEL`.
-5. The workflow enables AI suggestions automatically only when both `LLM_API_KEY` and `LLM_API_URL` are present.
+5. If your gateway uses non-default routing or auth, optionally create `LLM_API_PATH`, `LLM_AUTH_HEADER`, and `LLM_AUTH_SCHEME`.
+6. The workflow enables AI suggestions automatically only when both `LLM_API_KEY` and `LLM_API_URL` are present.
 
 Do not commit API keys to this repository.
+
+If the report shows `ai_request_failed` with HTTP 403, the request reached the gateway but was rejected. Check that the key is valid, the key is allowed to use the configured model, the URL/path are correct, and GitHub-hosted runners are allowed by the gateway or corporate network policy.
 
 ## Intentionally Test a Failure
 
@@ -150,7 +162,10 @@ xml_schema_path: "{{ role_path }}/files/app_config.xsd"
 xml_report_json_path: "{{ playbook_dir }}/../reports/xml_validation_report.json"
 xml_report_md_path: "{{ playbook_dir }}/../reports/xml_validation_report.md"
 ai_enabled: false
+ai_api_path: /openai/v1/chat/completions
 ai_api_key_env_var: XML_AI_API_KEY
+ai_auth_header: Authorization
+ai_auth_scheme: Bearer
 ai_model: azure.gpt-4o-mini
 ```
 

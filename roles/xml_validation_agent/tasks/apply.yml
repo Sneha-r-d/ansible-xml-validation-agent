@@ -37,7 +37,10 @@
     report_md_path: "{{ xml_report_md_path }}"
     ai_enabled: "{{ ai_enabled }}"
     ai_api_url: "{{ ai_api_url }}"
+    ai_api_path: "{{ ai_api_path }}"
     ai_api_key_env_var: "{{ ai_api_key_env_var }}"
+    ai_auth_header: "{{ ai_auth_header }}"
+    ai_auth_scheme: "{{ ai_auth_scheme }}"
     ai_model: "{{ ai_model }}"
   register: xml_validation_result
   ignore_errors: true
