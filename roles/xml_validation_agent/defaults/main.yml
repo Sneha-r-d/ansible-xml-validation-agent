@@ -1,0 +1,19 @@
+---
+xml_output_path: "{{ playbook_dir }}/../build/app_config.xml"
+xml_schema_path: "{{ role_path }}/files/app_config.xsd"
+xml_report_json_path: "{{ playbook_dir }}/../reports/xml_validation_report.json"
+xml_report_md_path: "{{ playbook_dir }}/../reports/xml_validation_report.md"
+
+xml_required_tags:
+  - /application/name
+  - /application/environment
+  - /application/server/host
+  - /application/server/port
+  - /application/database/engine
+  - /application/database/host
+  - /application/database/port
+
+ai_enabled: false
+ai_api_url: ""
+ai_api_key_env_var: XML_AI_API_KEY
+

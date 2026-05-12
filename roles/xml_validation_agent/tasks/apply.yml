@@ -1,0 +1,56 @@
+---
+- name: Ensure XML output directory exists
+  ansible.builtin.file:
+    path: "{{ xml_output_path | dirname }}"
+    state: directory
+    mode: "0755"
+
+- name: Ensure report directory exists
+  ansible.builtin.file:
+    path: "{{ xml_report_json_path | dirname }}"
+    state: directory
+    mode: "0755"
+
+- name: Ensure Markdown report directory exists
+  ansible.builtin.file:
+    path: "{{ xml_report_md_path | dirname }}"
+    state: directory
+    mode: "0755"
+
+- name: Load sample application configuration
+  ansible.builtin.include_vars:
+    file: "{{ role_path }}/vars/sample_config.yml"
+
+- name: Render application XML configuration
+  ansible.builtin.template:
+    src: app_config.xml.j2
+    dest: "{{ xml_output_path }}"
+    mode: "0644"
+
+- name: Validate XML configuration and write reports
+  xml_validate_ai:
+    xml_path: "{{ xml_output_path }}"
+    schema_path: "{{ xml_schema_path }}"
+    required_tags: "{{ xml_required_tags }}"
+    report_json_path: "{{ xml_report_json_path }}"
+    report_md_path: "{{ xml_report_md_path }}"
+    ai_enabled: "{{ ai_enabled }}"
+    ai_api_url: "{{ ai_api_url }}"
+    ai_api_key_env_var: "{{ ai_api_key_env_var }}"
+  register: xml_validation_result
+  ignore_errors: true
+
+- name: Print XML validation summary
+  ansible.builtin.debug:
+    msg:
+      - "XML validation status: {{ 'failed' if (xml_validation_result.validation_errors_count | int) > 0 else 'passed' }}"
+      - "Validation errors: {{ xml_validation_result.validation_errors_count | default(0) }}"
+      - "Validation warnings: {{ xml_validation_result.validation_warnings_count | default(0) }}"
+      - "JSON report: {{ xml_report_json_path }}"
+      - "Markdown report: {{ xml_report_md_path }}"
+
+- name: Fail when XML validation errors are present
+  ansible.builtin.fail:
+    msg: "XML validation failed with {{ xml_validation_result.validation_errors_count }} error(s). See {{ xml_report_json_path }} and {{ xml_report_md_path }}."
+  when: (xml_validation_result.validation_errors_count | default(1) | int) > 0
+

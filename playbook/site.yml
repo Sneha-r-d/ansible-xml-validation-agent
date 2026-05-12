@@ -1,0 +1,9 @@
+---
+- name: Render and validate application XML
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  roles:
+    - role: ../roles/xml_validation_agent
+

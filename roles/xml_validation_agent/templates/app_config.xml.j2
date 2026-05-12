@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<application>
+  <name>{{ app_name | string | e }}</name>
+  <environment>{{ environment | string | e }}</environment>
+  <server>
+    <host>{{ server_host | string | e }}</host>
+    <port>{{ server_port }}</port>
+  </server>
+  <database>
+    <engine>{{ db_engine | string | e }}</engine>
+    <host>{{ db_host | string | e }}</host>
+    <port>{{ db_port }}</port>
+  </database>
+</application>
+

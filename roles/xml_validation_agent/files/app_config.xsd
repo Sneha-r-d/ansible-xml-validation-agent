@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:simpleType name="nonEmptyString">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="1"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="environmentType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="development"/>
+      <xs:enumeration value="staging"/>
+      <xs:enumeration value="production"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="databaseEngineType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="postgresql"/>
+      <xs:enumeration value="mysql"/>
+      <xs:enumeration value="mariadb"/>
+      <xs:enumeration value="sqlite"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="portType">
+    <xs:restriction base="xs:integer">
+      <xs:minInclusive value="1"/>
+      <xs:maxInclusive value="65535"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:element name="application">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="name" type="nonEmptyString"/>
+        <xs:element name="environment" type="environmentType"/>
+        <xs:element name="server">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="host" type="nonEmptyString"/>
+              <xs:element name="port" type="portType"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="database">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="engine" type="databaseEngineType"/>
+              <xs:element name="host" type="nonEmptyString"/>
+              <xs:element name="port" type="portType"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
+

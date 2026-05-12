@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  role_name: xml_validation_agent
+  namespace: demo
+  author: XML Validation Agent
+  description: Render and validate XML configuration with optional AI repair suggestions.
+  license: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+dependencies: []
+

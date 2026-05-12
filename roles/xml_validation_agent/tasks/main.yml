@@ -1,0 +1,4 @@
+---
+- name: Run XML validation workflow
+  ansible.builtin.import_tasks: apply.yml
+
