@@ -29,12 +29,18 @@ jobs:
         if: always()
         shell: bash
         run: |
+          echo "::group::XML Validation Report"
           if [[ -f reports/xml_validation_report.md ]]; then
-            cat reports/xml_validation_report.md >> "$GITHUB_STEP_SUMMARY"
+            {
+              echo "## XML Validation Report"
+              echo
+              cat reports/xml_validation_report.md
+            } | tee -a "$GITHUB_STEP_SUMMARY"
           else
             {
-              echo "# XML Validation Report"
+              echo "## XML Validation Report"
               echo
               echo "No Markdown validation report was generated."
-            } >> "$GITHUB_STEP_SUMMARY"
+            } | tee -a "$GITHUB_STEP_SUMMARY"
           fi
+          echo "::endgroup::"

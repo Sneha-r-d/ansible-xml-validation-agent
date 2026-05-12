@@ -118,9 +118,9 @@ The Markdown report is designed for quick review in the GitHub Actions workflow 
 
 ## GitHub Actions Report Summary
 
-The workflow writes `reports/xml_validation_report.md` into the GitHub Actions job summary, so reviewers can read the validation result without downloading a zipped artifact.
+The workflow writes `reports/xml_validation_report.md` into the GitHub Actions job summary and also prints it in the `Publish validation report summary` log step, so reviewers can read the validation result without downloading a zipped artifact.
 
-Open the workflow run and check the **Summary** page for the rendered XML validation report.
+Open the workflow run and check the **Summary** page for the rendered XML validation report. If GitHub does not render the custom summary block immediately, open the `Render and validate XML` job and expand the `Publish validation report summary` step.
 
 ## Important Defaults
 
