@@ -1,9 +1,8 @@
 ---
 app_name: customer-portal
 environment: staging
-server_host: app.staging.example.com
-server_port: 8443
-db_engine: postgresql
+server_host: ""
+server_port: not-a-number
+db_engine: oracle
 db_host: postgres.staging.internal
 db_port: 5432
-
