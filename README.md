@@ -49,20 +49,37 @@ To enable them, set role variables such as:
 
 ```yaml
 ai_enabled: true
-ai_api_url: "https://api.example.com/xml-repair"
-ai_api_key_env_var: XML_AI_API_KEY
+ai_api_url: "https://your-llm-gateway.example.com"
+ai_api_key_env_var: LLM_API_KEY
+ai_model: azure.gpt-4o-mini
 ```
 
 For local testing, export the API key before running Ansible:
 
 ```bash
-export XML_AI_API_KEY="your-api-key"
+export LLM_API_KEY="your-api-key"
+export LLM_API_URL="https://your-llm-gateway.example.com"
+export LLM_MODEL="azure.gpt-4o-mini"
+
+ansible-playbook -i inventory/localhost.ini playbook/site.yml \
+  -e ai_enabled=true \
+  -e "ai_api_url=${LLM_API_URL}" \
+  -e ai_api_key_env_var=LLM_API_KEY \
+  -e "ai_model=${LLM_MODEL}"
 ```
 
 On Windows PowerShell:
 
 ```powershell
-$env:XML_AI_API_KEY = "your-api-key"
+$env:LLM_API_KEY = "your-api-key"
+$env:LLM_API_URL = "https://your-llm-gateway.example.com"
+$env:LLM_MODEL = "azure.gpt-4o-mini"
+
+ansible-playbook -i inventory/localhost.ini playbook/site.yml `
+  -e ai_enabled=true `
+  -e "ai_api_url=$env:LLM_API_URL" `
+  -e ai_api_key_env_var=LLM_API_KEY `
+  -e "ai_model=$env:LLM_MODEL"
 ```
 
 ## Configure GitHub Actions Secret
@@ -71,10 +88,11 @@ In GitHub:
 
 1. Open the repository settings.
 2. Go to **Secrets and variables** > **Actions**.
-3. Create a repository secret named `XML_AI_API_KEY`.
-4. Enable AI only when you have also configured `ai_api_url`.
+3. Create a repository secret named `LLM_API_KEY`.
+4. Create repository variables named `LLM_API_URL` and `LLM_MODEL`.
+5. The workflow enables AI suggestions automatically only when both `LLM_API_KEY` and `LLM_API_URL` are present.
 
-The default workflow does not call an AI API because `ai_enabled` is `false`.
+Do not commit API keys to this repository.
 
 ## Intentionally Test a Failure
 
@@ -133,6 +151,7 @@ xml_report_json_path: "{{ playbook_dir }}/../reports/xml_validation_report.json"
 xml_report_md_path: "{{ playbook_dir }}/../reports/xml_validation_report.md"
 ai_enabled: false
 ai_api_key_env_var: XML_AI_API_KEY
+ai_model: azure.gpt-4o-mini
 ```
 
-No API keys are hardcoded. The module calls the AI API only when `ai_enabled` is true and validation errors exist.
+No API keys are hardcoded. The module calls the AI API only when `ai_enabled` is true and validation errors exist. The GitHub Actions workflow overrides `ai_api_key_env_var` to `LLM_API_KEY` so it can use the repository secret configured for CI.

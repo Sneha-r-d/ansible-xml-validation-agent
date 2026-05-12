@@ -16,4 +16,4 @@ xml_required_tags:
 ai_enabled: false
 ai_api_url: ""
 ai_api_key_env_var: XML_AI_API_KEY
-
+ai_model: azure.gpt-4o-mini

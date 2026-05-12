@@ -23,7 +23,22 @@ jobs:
         run: python -m pip install -r requirements.txt
 
       - name: Run XML validation playbook
-        run: ansible-playbook -i inventory/localhost.ini playbook/site.yml
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_API_URL: ${{ vars.LLM_API_URL }}
+          LLM_MODEL: ${{ vars.LLM_MODEL }}
+        shell: bash
+        run: |
+          ai_enabled=false
+          if [[ -n "${LLM_API_KEY}" && -n "${LLM_API_URL}" ]]; then
+            ai_enabled=true
+          fi
+
+          ansible-playbook -i inventory/localhost.ini playbook/site.yml \
+            -e "ai_enabled=${ai_enabled}" \
+            -e "ai_api_url=${LLM_API_URL}" \
+            -e "ai_api_key_env_var=LLM_API_KEY" \
+            -e "ai_model=${LLM_MODEL:-azure.gpt-4o-mini}"
 
       - name: Publish validation report summary
         if: always()

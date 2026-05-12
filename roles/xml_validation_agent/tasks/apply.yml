@@ -38,6 +38,7 @@
     ai_enabled: "{{ ai_enabled }}"
     ai_api_url: "{{ ai_api_url }}"
     ai_api_key_env_var: "{{ ai_api_key_env_var }}"
+    ai_model: "{{ ai_model }}"
   register: xml_validation_result
   ignore_errors: true
 

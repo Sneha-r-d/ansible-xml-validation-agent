@@ -47,6 +47,10 @@ options:
     description: Environment variable name containing the AI API key.
     type: str
     default: XML_AI_API_KEY
+  ai_model:
+    description: Model name to send to an OpenAI-compatible chat completions API.
+    type: str
+    default: azure.gpt-4o-mini
 supports_check_mode: true
 author:
   - XML Validation Agent
@@ -325,32 +329,78 @@ def validate_required_tags(xml_tree, required_tags, validation_errors):
                 )
 
 
-def call_ai_api(ai_api_url, api_key, xml_content, validation_errors):
+def build_ai_endpoint(ai_api_url):
+    cleaned_url = ai_api_url.rstrip("/")
+    if cleaned_url.endswith("/chat/completions") or cleaned_url.endswith("/responses"):
+        return cleaned_url
+    return "{0}/openai/v1/chat/completions".format(cleaned_url)
+
+
+def build_ai_prompt(xml_content, validation_errors):
+    return (
+        "Review this rendered XML configuration and its validation errors. "
+        "Return concise repair suggestions with exact fields or XML elements to change.\n\n"
+        "Validation errors:\n{0}\n\n"
+        "XML content:\n{1}"
+    ).format(json.dumps(validation_errors, indent=2, sort_keys=True), xml_content)
+
+
+def extract_ai_suggestions(response):
+    content_type = response.headers.get("content-type", "")
+    if "application/json" not in content_type:
+        return response.text
+
+    payload = response.json()
+    if not isinstance(payload, dict):
+        return payload
+
+    choices = payload.get("choices")
+    if choices:
+        message = choices[0].get("message", {})
+        content = message.get("content")
+        if content:
+            return content
+
+    output = payload.get("output")
+    if output:
+        return output
+
+    return payload
+
+
+def call_ai_api(ai_api_url, api_key, ai_model, xml_content, validation_errors):
     if requests is None:
         raise RuntimeError("Python package requests is required for AI suggestions but is not installed.")
 
+    endpoint = build_ai_endpoint(ai_api_url)
     headers = {
         "Authorization": "Bearer {0}".format(api_key),
         "Content-Type": "application/json",
     }
     payload = {
-        "task": "Suggest repairs for XML validation errors.",
-        "xml_content": xml_content,
-        "validation_errors": validation_errors,
+        "model": ai_model,
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are an Ansible and XML configuration validation assistant.",
+            },
+            {
+                "role": "user",
+                "content": build_ai_prompt(xml_content, validation_errors),
+            },
+        ],
+        "temperature": 0.1,
     }
-    response = requests.post(ai_api_url, headers=headers, json=payload, timeout=30)
+    response = requests.post(endpoint, headers=headers, json=payload, timeout=30)
     response.raise_for_status()
-
-    content_type = response.headers.get("content-type", "")
-    if "application/json" in content_type:
-        return response.json()
-    return response.text
+    return extract_ai_suggestions(response)
 
 
 def maybe_get_ai_suggestions(
     ai_enabled,
     ai_api_url,
     ai_api_key_env_var,
+    ai_model,
     xml_content,
     validation_errors,
     validation_warnings,
@@ -379,7 +429,7 @@ def maybe_get_ai_suggestions(
         return None
 
     try:
-        return call_ai_api(ai_api_url, api_key, xml_content, validation_errors)
+        return call_ai_api(ai_api_url, api_key, ai_model, xml_content, validation_errors)
     except Exception as exc:
         validation_warnings.append(
             make_issue(
@@ -419,6 +469,7 @@ def run_module():
         "ai_enabled": {"type": "bool", "default": False},
         "ai_api_url": {"type": "str", "required": False, "default": ""},
         "ai_api_key_env_var": {"type": "str", "required": False, "default": "XML_AI_API_KEY"},
+        "ai_model": {"type": "str", "required": False, "default": "azure.gpt-4o-mini"},
     }
 
     module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
@@ -461,6 +512,7 @@ def run_module():
         params["ai_enabled"],
         params["ai_api_url"],
         params["ai_api_key_env_var"],
+        params["ai_model"],
         xml_content,
         validation_errors,
         validation_warnings,
@@ -523,4 +575,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
