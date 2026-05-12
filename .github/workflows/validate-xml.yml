@@ -32,6 +32,7 @@ jobs:
           LLM_MODEL: ${{ vars.LLM_MODEL }}
         shell: bash
         run: |
+          echo "Preparing XML validation run"
           ai_enabled=false
           if [[ -n "${LLM_API_KEY}" && -n "${LLM_API_URL}" ]]; then
             ai_enabled=true

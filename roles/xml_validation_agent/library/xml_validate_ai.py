@@ -168,13 +168,14 @@ def issue_table(title, issues):
         lines.extend(["None.", ""])
         return lines
 
-    lines.extend(["| Code | Path | Message |", "| --- | --- | --- |"])
+    lines.extend(["| Code | Path | Message | Details |", "| --- | --- | --- | --- |"])
     for issue in issues:
         lines.append(
-            "| {code} | {path} | {message} |".format(
+            "| {code} | {path} | {message} | {details} |".format(
                 code=markdown_escape(issue.get("code", "")),
                 path=markdown_escape(issue.get("path", "")),
                 message=markdown_escape(issue.get("message", "")),
+                details=markdown_escape(issue.get("details", "")),
             )
         )
     lines.append("")
