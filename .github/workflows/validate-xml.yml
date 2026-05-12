@@ -25,11 +25,16 @@ jobs:
       - name: Run XML validation playbook
         run: ansible-playbook -i inventory/localhost.ini playbook/site.yml
 
-      - name: Upload validation reports
+      - name: Publish validation report summary
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: xml-validation-reports
-          path: reports/
-          if-no-files-found: warn
-
+        shell: bash
+        run: |
+          if [[ -f reports/xml_validation_report.md ]]; then
+            cat reports/xml_validation_report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "# XML Validation Report"
+              echo
+              echo "No Markdown validation report was generated."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi

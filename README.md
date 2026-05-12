@@ -19,7 +19,7 @@ When enabled, the custom module can also call an AI API for repair suggestions. 
    - `reports/xml_validation_report.json`
    - `reports/xml_validation_report.md`
 6. The play fails when validation errors exist.
-7. GitHub Actions uploads `reports/` as the `xml-validation-reports` artifact, even if validation fails.
+7. GitHub Actions publishes the Markdown validation report directly in the workflow run summary, even if validation fails.
 
 ## Run Locally
 
@@ -114,23 +114,13 @@ The JSON report is structured for automation:
 }
 ```
 
-The Markdown report is designed for quick review in CI artifacts and includes summary counts, validation errors, validation warnings, and AI suggestions when available.
+The Markdown report is designed for quick review in the GitHub Actions workflow summary and includes summary counts, validation errors, validation warnings, and AI suggestions when available.
 
-## GitHub Actions Artifact
+## GitHub Actions Report Summary
 
-The workflow uploads the entire `reports/` directory as:
+The workflow writes `reports/xml_validation_report.md` into the GitHub Actions job summary, so reviewers can read the validation result without downloading a zipped artifact.
 
-```text
-xml-validation-reports
-```
-
-Expected artifact contents:
-
-```text
-reports/
-├── xml_validation_report.json
-└── xml_validation_report.md
-```
+Open the workflow run and check the **Summary** page for the rendered XML validation report.
 
 ## Important Defaults
 
