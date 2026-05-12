@@ -20,6 +20,7 @@
 - name: Load sample application configuration
   ansible.builtin.include_vars:
     file: "{{ role_path }}/vars/sample_config.yml"
+    name: app_config
 
 - name: Render application XML configuration
   ansible.builtin.template:
@@ -53,4 +54,3 @@
   ansible.builtin.fail:
     msg: "XML validation failed with {{ xml_validation_result.validation_errors_count }} error(s). See {{ xml_report_json_path }} and {{ xml_report_md_path }}."
   when: (xml_validation_result.validation_errors_count | default(1) | int) > 0
-
